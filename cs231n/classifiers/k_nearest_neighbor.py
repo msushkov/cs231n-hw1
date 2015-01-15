@@ -121,7 +121,7 @@ class KNearestNeighbor:
     #       and two broadcast sums.                                         #
     #########################################################################
     
-    m1 = -2.0 * np.dot(X, self.X_train)
+    m1 = -2.0 * np.dot(X, self.X_train.T)
     assert m1.shape == (num_test, num_train)
 
     train_sums = np.sum(self.X_train ** 2, axis=1) # sum over each row
@@ -129,7 +129,7 @@ class KNearestNeighbor:
 
     dists += (m1 + train_sums)
     dists = np.rot90(dists) + test_sums
-    dists = np.rot90(dists, 3)
+    dists = np.sqrt(np.rot90(dists, 3))
 
     assert dists.shape == (num_test, num_train)
 
