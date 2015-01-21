@@ -80,7 +80,52 @@ def softmax_loss_vectorized(W, X, y, reg):
   # here, it is easy to run into numeric instability. Don't forget the        #
   # regularization!                                                           #
   #############################################################################
-  pass
+  
+  K = W.shape[0]
+  N = X.shape[1]
+  D = W.shape[1]
+
+  scores = np.dot(W, X)
+  scores -= np.max(scores) # shift by log C to avoid numerical instability
+
+  y_mat = np.zeros(shape = (K, N))
+  y_mat[y, range(N)] = 1
+
+  # matrix of all zeros except for a single wx + log C value in each column that corresponds to the
+  # quantity we need to subtract from each row of scores
+  correct_wx = np.multiply(y_mat, scores)
+
+  # create a single row of the correct wx_y + log C values for each data point
+  sums_wy = np.sum(correct_wx, axis=0) # sum over each column
+
+  exp_scores = np.exp(scores)
+  sums_exp = np.sum(exp_scores, axis=0) # sum over each column
+  result = np.log(sums_exp)
+
+  result -= sums_wy
+
+  loss = np.sum(result)
+
+  # Right now the loss is a sum over all training examples, but we want it
+  # to be an average instead so we divide by num_train.
+  loss /= float(N)
+
+  # Add regularization to the loss.
+  loss += 0.5 * reg * np.sum(W * W)
+
+
+  sum_exp_scores = np.sum(exp_scores, axis=0) # sum over columns
+  sum_exp_scores = 1.0 / sum_exp_scores
+
+  dW = exp_scores * sum_exp_scores
+  dW = np.dot(dW, X.T)
+  dW -= np.dot(y_mat, X.T)
+
+  dW /= float(N)
+
+  # Add regularization to the gradient
+  dW += reg * W
+
   #############################################################################
   #                          END OF YOUR CODE                                 #
   #############################################################################
