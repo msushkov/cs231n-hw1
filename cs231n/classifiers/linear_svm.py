@@ -74,34 +74,32 @@ def svm_loss_vectorized(W, X, y, reg):
   N = X.shape[1]
   D = W.shape[1]
 
+  scores = np.dot(W, X)
+
   y_mat = np.zeros(shape = (K, N))
   y_mat[y, range(N)] = 1
 
-  scores = np.dot(W, X)
+  # matrix of all zeros except for a single wx value in each column that corresponds to the
+  # quantity we need to subtract from each row of scores
+  correct_wx = np.multiply(y_mat, scores)
 
-  wx = np.diag(np.dot(y_mat.T, scores))
+  # create a single row of the correct wx_y values for each data point
+  sums = np.sum(correct_wx, axis=0) # sum over each column
+
+  margins = scores - sums + 1
   
-  # need a matrix of shape (N, D) where the rows are w_y0, w_y1, ..., w_yN-1
-
-  # need rows and cols for advanced indexing of W using elements in y as indices
-  #cols = np.tile(np.arange(D), (N, 1))
-  #y_col = np.reshape(y, (N, 1)) # make y a column vector
-  #rows = np.tile(y_col, (1, D))
-
-  # [w_y0 * x0, w_y1 * x1, ..., w_yN-1 * xN-1]
-  #wx = np.diag(np.dot(W[rows, cols], X))
-
-  #result = np.dot(W, X) - wx + 1
-  #result = np.maximum(np.zeros(N, D), result)
+  # threshold the margins
+  result = np.maximum(np.zeros((K, N)), margins)
 
   # sum over each column
   # (subtract 1 since we overshot our sum by 1 for the j == y term that we didn't ignore)
-  #result = np.sum(result, axis=0) - 1
+  result = np.sum(result, axis=0) - 1
   
-  #loss = np.sum(result) / float(N)
+  # average over all datapoints
+  loss = np.sum(result) / float(N)
 
   # Add regularization to the loss.
-  #loss += 0.5 * reg * np.sum(W * W)
+  loss += 0.5 * reg * np.sum(W * W)
 
   #############################################################################
   #                             END OF YOUR CODE                              #
@@ -117,7 +115,29 @@ def svm_loss_vectorized(W, X, y, reg):
   # to reuse some of the intermediate values that you used to compute the     #
   # loss.                                                                     #
   #############################################################################
-  pass
+  
+  # make each entry 1 if it is > 0, 0 otherwise
+  margins[margins > 0] = 1
+  margins[margins < 0] = 0
+
+  # keep margins mostly the same but for each column, zero out the row corresponding to the
+  # correct label
+  # (basically change the 1's to 0's, since we are doing w_y*x - w_y*x + 1 for those entries)
+  margins[y, range(N)] = 0
+
+  # compute column sums and then set the elements that we zeroed out above to the negative of
+  # that sum
+  col_sums = np.sum(margins, axis=0)
+
+  margins[y, range(N)] = -1.0 * col_sums
+
+  dW = np.dot(margins, X.T)
+
+  dW /= float(N)
+
+  # Add regularization to the gradient
+  dW += reg * np.sum(W)
+
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
