@@ -76,7 +76,7 @@ class LinearClassifier:
       # Update the weights using the gradient and the learning rate.          #
       #########################################################################
       
-      self.W = self.W - learning_rate * grad
+      self.W -= learning_rate * grad
 
       #########################################################################
       #                       END OF YOUR CODE                                #
@@ -101,16 +101,19 @@ class LinearClassifier:
       class.
     """
     y_pred = np.zeros(X.shape[1])
+
     ###########################################################################
     # TODO:                                                                   #
     # Implement this method. Store the predicted labels in y_pred.            #
     ###########################################################################
     
-    pass
+    scores = np.dot(self.W, X)
+    y_pred = np.argmax(scores, axis=0)
 
     ###########################################################################
     #                           END OF YOUR CODE                              #
     ###########################################################################
+
     return y_pred
   
   def loss(self, X_batch, y_batch, reg):
