@@ -66,6 +66,17 @@ def rgb2gray(rgb):
   return np.dot(rgb[...,:3], [0.299, 0.587, 0.144])
 
 
+def split_hog_feature(im, n = 2):
+  """
+  Instead of generating a single HOG descriptor for the entire image, split up the image into
+  patches and generate a separate HOG descriptor for each patch. Then concatenate them all together.
+  """
+  split_imgs = split_img(im, n)
+  hogs = [hog_feature(x) for x in split_imgs]
+  result = np.concatenate(hogs)
+  return result
+
+
 def hog_feature(im):
   """Compute Histogram of Gradient (HOG) feature for an image
   
@@ -144,5 +155,20 @@ def color_histogram_hsv(im, nbin=10, xmin=0, xmax=255, normalized=True):
   # return histogram
   return imhist
 
+
+def split_img(img, n):
+  """
+  Split an image into a grid of n x n chunks.
+  Returns a list of size n^2 where each element is a chunk.
+  """
+  result = []
+  horiz_chunks = np.hsplit(img, n)
+  nested_chunks = [np.vsplit(x, n) for x in horiz_chunks]
+  
+  for i in range(n):
+    for j in range(n):
+      result.append(nested_chunks[i][j])
+
+  return result
 
 pass
